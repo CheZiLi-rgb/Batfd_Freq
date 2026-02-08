@@ -93,25 +93,4 @@ class FAD_MultiBranch(nn.Module):
             y_list.append(y)
         out = torch.cat(y_list, dim=1)  # [N, 12, 299, 299]
         return out
-
-class CrossFrequencyAttention(nn.Module):
-    def __init__(self, in_channels=3, reduction=3):
-        super().__init__()
-        # Global average pooling is used to obtain the statistical characteristics of the frequency band
-        self.global_pool = nn.AdaptiveAvgPool2d(1)
-        self.attn = nn.Sequential(
-            nn.Conv2d(in_channels * 3, 32, kernel_size=1),
-            nn.ReLU(),
-            nn.Conv2d(32, 3, kernel_size=1),
-            nn.Softmax(dim=1)  # Weight normalization
-        )
-
-    def forward(self, freq_branches):
-        # freq_branches：[low, middle, high] list, every x shape is [B, C, H, W]
-        low, middle, high = freq_branches
-        concat = torch.cat([low, middle, high], dim=1)  # [B, 3C, H, W]
-        # learning weight：[B, 3, 1, 1]
-        weights = self.attn(self.global_pool(concat))  # [B, 3, 1, 1]
-        # weighted fusion：(low * w0 + middle * w1 + high * w2)
-        fused = low * weights[:, 0:1] + middle * weights[:, 1:2] + high * weights[:, 2:3]
-        return fused
+        
