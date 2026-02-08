@@ -7,6 +7,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 from dataset.lavdf import LavdfDataModule
+from dataset.avdefake1m import AVDefake1MDataModule
 from model.batfd_freq import Batfd_Freq
 from utils import LrLogger, EarlyStoppingLR, generate_metadata_min
 
@@ -27,7 +28,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     config = toml.load(args.config)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if not os.path.exists(os.path.join(args.data_root, "metadata.min.json")):
+    if not os.path.exists(os.path.join(args.data_root, "metadata.json")):
         generate_metadata_min(args.data_root)
 
     learning_rate = config["optimizer"]["learning_rate"]
@@ -65,6 +66,17 @@ if __name__ == '__main__':
 
     if dataset == "lavdf":
         dm = LavdfDataModule(
+            root=args.data_root,
+            frame_padding=config["num_frames"],
+            require_match_scores=require_match_scores,
+            feature_types=(v_feature, a_feature),
+            max_duration=config["max_duration"],
+            batch_size=args.batch_size, num_workers=args.num_workers,
+            take_train=args.num_train, take_dev=args.num_val,
+            get_meta_attr=get_meta_attr
+        )
+    elif dataset == "avdefake1m":
+        dm = AVDefake1MDataModule(
             root=args.data_root,
             frame_padding=config["num_frames"],
             require_match_scores=require_match_scores,
