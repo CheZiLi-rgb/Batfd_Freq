@@ -7,7 +7,7 @@ import torch
 from dataset.lavdf import LavdfDataModule
 from inference import inference_batfd
 from metrics import AP, AR
-from model import Batfd2
+from model import Batfd_Freq
 from post_process import post_process
 from utils import generate_metadata_min, read_json
 
@@ -61,9 +61,9 @@ def evaluate_lavdf(config, args):
         require_match_scores = True
         get_meta_attr = BatfdPlus.get_meta_attr
     elif config["model_type"] == "batfd":
-        model = Batfd2.load_from_checkpoint(args.checkpoint)
+        model = Batfd_Freq.load_from_checkpoint(args.checkpoint)
         require_match_scores = False
-        get_meta_attr = Batfd2.get_meta_attr
+        get_meta_attr = Batfd_Freq.get_meta_attr
     else:
         raise ValueError("Invalid model type")
 
@@ -109,9 +109,7 @@ def evaluate_lavdf(config, args):
             # evaluate AP
             iou_thresholds = [0.5, 0.75, 0.95]
 
-            # 打开文件并写入结果
-            with open(output_file, 'a+') as f:
-                # 评估 AP
+            with open(output_file, 'w') as f:
                 print("--------------------------------------------------", file=f)
                 ap_score = AP(iou_thresholds=iou_thresholds)(metadata, proposals)
                 for iou_threshold in iou_thresholds:
@@ -119,7 +117,6 @@ def evaluate_lavdf(config, args):
                     print(line, file=f)
                 print("--------------------------------------------------", file=f)
 
-                # 评估 AR
                 iou_thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
                 n_proposals_list = [100, 50, 20, 10]
                 ar_score = AR(n_proposals_list, iou_thresholds=iou_thresholds)(metadata, proposals)
