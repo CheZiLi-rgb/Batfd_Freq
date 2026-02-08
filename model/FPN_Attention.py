@@ -65,54 +65,6 @@ class Conv(nn.Module):
     def forward(self, x):
         return self.relu(self.bn(self.conv(x)))
 
-# class MSBlockLayer(nn.Module):
-#     def __init__(self, c, g, k):
-#         super().__init__()
-#         self.conv = nn.Conv1d(c, g, k, padding=k//2, groups=4)
-#         self.bn = nn.BatchNorm1d(g)
-#         self.relu = nn.ReLU(inplace=True)
-
-#     def forward(self, x):
-#         return self.relu(self.bn(self.conv(x)))
-
-# class MSBlock(nn.Module):
-#     def __init__(self, inc, ouc=512, kernel_sizes=[1,3,5,7], layers_num=3):
-#         super().__init__()
-#         hidden = inc * 3
-#         self.in_conv = Conv(inc, hidden, 1)
-#         self.scale_conv = nn.Sequential(
-#             nn.Conv1d(inc, hidden//len(kernel_sizes), kernel_size=1),
-#             nn.BatchNorm1d(hidden//len(kernel_sizes)),
-#             nn.ReLU(inplace=True)
-#         )
-#         self.mid_convs = nn.ModuleList()
-#         for k in kernel_sizes:
-#             if k == 1:
-#                 self.mid_convs.append(nn.Identity())
-#                 continue
-#             layers = [MSBlockLayer(hidden // len(kernel_sizes), hidden // len(kernel_sizes), k) for _ in range(layers_num)]
-#             self.mid_convs.append(nn.Sequential(*layers))
-#         self.out_conv = Conv(hidden, ouc, 1)
-
-#     def forward(self, feats_list):
-#         x = self.in_conv(feats_list[0])  # (B, 768, T)，feats_list[0]是p2_v 256通道
-#         channels = []
-#         weights = nn.Parameter(torch.ones(len(self.mid_convs), dtype=torch.float32))
-#         branch_channels = x.shape[1] // len(self.mid_convs)  # 768//4=192
-#         for i, conv in enumerate(self.mid_convs):
-#             start = i * branch_channels
-#             end = (i + 1) * branch_channels
-#             channel = x[:, start:end]  # (B, 192, T)
-#             if i > 0:
-#                 up = F.interpolate(feats_list[i], size=x.shape[-1], mode='nearest')
-#                 up = self.scale_conv(up)  # (B, 192, T)
-#                 channel = channel + up  # (B, 192, T)
-#             channel = conv(channel)
-#             channels.append(channel * weights[i])
-#         out = torch.cat(channels, dim=1)  # (B, 192*4=768, T)
-#         return self.out_conv(out)  # (B, ouc, T)
-
-
 class LocalCrossAttention1D(nn.Module):
     def __init__(self, dim, n_head=8, win_size=11, dropout=0.1):
         super().__init__()
@@ -175,14 +127,11 @@ class FPN_CA_MSBlock_Fusion(nn.Module):
     def __init__(self, in_channels=256, out_channels=512):
         super().__init__()
         self.fpn_video = FPNWithCrossAttention(in_channels, base_channels=256, n_head=8)
-        # self.msblock = MSBlock(inc=256, ouc=out_channels)
-
+        
     def forward(self, video_feat):
         # (B, 256, T)
         p2_v, p3_v, p4_v, p5_v = self.fpn_video(video_feat)
-        # video_fused = self.msblock([p2_v, p3_v, p4_v, p5_v])
 
-        # return video_fused
         return p2_v
 
 class CrossAttention1D(nn.Module):
