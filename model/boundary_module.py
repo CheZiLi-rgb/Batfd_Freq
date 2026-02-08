@@ -263,8 +263,6 @@ class BoundaryModulePlus(Module):
         self.cross_modal_guidance = CrossModalGuidance(dim=n_feature_in)
         self.offset_head = nn.Conv2d(dim1, 2, kernel_size=1)
         self.out = Rearrange("b c d t -> b (c d) t")
-        # self.proposal_block2 = ProposalBlock(in_channels=n_feature_in)
-        # self.offset_head = nn.Conv2d(256, 2, kernel_size=1)
 
     def single_model_forward(self, feature: Tensor) -> Tensor:
         feature = self.bm_layer(feature)  # (B, 256, 512) -> (B, 256, 10, 40, 512)
