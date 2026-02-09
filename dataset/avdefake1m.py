@@ -31,6 +31,18 @@ class AVTimMetadata:
     audio_frames: int
     video_model: str
 
+    @property
+    def modify_video(self) -> bool:
+        return len(self.visual_fake_segments) > 0
+
+    @property
+    def modify_audio(self) -> bool:
+        return len(self.audio_fake_segments) > 0
+
+    @property
+    def fake_periods(self) -> List[List[float]]:
+        return self.fake_segments
+
 
 T_LABEL = Union[Tensor, Tuple[Tensor, Tensor, Tensor]]
 
@@ -121,6 +133,7 @@ class AVDefakeDataset(Dataset):
         # meta.file:"vox_celeb_2/id04178/9SJ4-4RqLM0/00006/fake_video_fake_audio.mp4"
         file_name = meta.file.replace(".mp4", ".npy")
         # root_path + {label/{train}/vox_celeb_2/id04178/9SJ4-4RqLM0/00006/fake_video_fake_audio.npy}
+        path = os.path.join(self.root, "label", meta.split, file_name)
         Path(os.path.join(self.root, "label", meta.split, os.path.dirname(file_name))).mkdir(parents=True, exist_ok=True)
         if os.path.exists(path):
             try:
@@ -188,6 +201,8 @@ class AVDefakeDataset(Dataset):
 
     @staticmethod
     def _get_log_mel_spectrogram(audio: Tensor) -> Tensor:
+        if not audio.is_floating_point():
+            audio = audio.to(torch.float32) / 32768.0
         ms = torchaudio.transforms.MelSpectrogram(n_fft=321, n_mels=64)
         spec = torch.log(ms(audio[:, 0]) + 0.01)
         return spec
