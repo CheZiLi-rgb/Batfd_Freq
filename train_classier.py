@@ -18,7 +18,7 @@ parser.add_argument("--num_workers", type=int, default=8)
 parser.add_argument("--gpus", type=int, default=1)
 parser.add_argument("--precision", default=16)
 parser.add_argument("--num_train", type=int, default=None)
-parser.add_argument("--num_val", type=int, default=1000)
+parser.add_argument("--num_val", type=int, default=50)
 parser.add_argument("--max_epochs", type=int, default=25)
 parser.add_argument("--resume", type=str, default=None)
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     except ValueError:
         precision = args.precision
 
-    monitor = "val_fusion_bm_loss"
+    monitor = "val_loss"
 
     trainer = Trainer(log_every_n_steps=1, precision=precision, max_epochs=args.max_epochs,
                       callbacks=[

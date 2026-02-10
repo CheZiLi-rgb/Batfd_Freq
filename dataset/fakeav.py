@@ -155,7 +155,8 @@ class FakeAVDataModule(LightningDataModule):
         self.Dataset = feature_type_to_dataset_type[feature_types]
 
     def setup(self, stage: Optional[str] = None) -> None:
-        self.metadata: List[Metadata] = read_json(os.path.join(self.root, "metadata_min.json"), lambda x: Metadata(**x))
+        # change json
+        self.metadata: List[Metadata] = read_json(os.path.join(self.root, "metadata_split_RVFA_as_test.json"), lambda x: Metadata(**x))
 
         train_metadata = []
         dev_metadata = []
@@ -165,7 +166,7 @@ class FakeAVDataModule(LightningDataModule):
             if self.cond is None or self.cond(meta):
                 if meta.split == "train":
                     train_metadata.append(meta)
-                elif meta.split == "dev":
+                elif meta.split == "none":
                     dev_metadata.append(meta)
                 elif meta.split == "test":
                     test_metadata.append(meta)
