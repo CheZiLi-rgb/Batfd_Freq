@@ -122,7 +122,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--checkpoint', type=str, required=True, help='Path to the .ckpt model file')
-    parser.add_argument('--data_root', type=str, default="/data1/lic/FakeAVCelev_v1.2",
+    parser.add_argument('--data_root', type=str, default="/data1/lic/FakeAVCeleb_v1.2",
                         help='Root directory of the dataset')
 
     parser.add_argument('--batch_size', type=int, default=16)
