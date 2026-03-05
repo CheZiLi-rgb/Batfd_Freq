@@ -42,7 +42,6 @@ class FakeAVDataset(Dataset):
                  audio_transform: Callable[[Tensor], Tensor] = Identity(),
                  metadata: Optional[List[Metadata]] = None,
                  get_meta_attr: Callable[[Metadata, Tensor, Tensor, T_LABEL], List[Any]] = None,
-                 require_match_scores: bool = False,
                  return_file_name: bool = False,
                  metadata_name: str = "metadata_min.json"
                  ):
@@ -54,7 +53,6 @@ class FakeAVDataset(Dataset):
         self.video_transform = video_transform
         self.audio_transform = audio_transform
         self.get_meta_attr = get_meta_attr
-        self.require_match_scores = require_match_scores
         self.return_file_name = return_file_name
 
         if metadata is None:
