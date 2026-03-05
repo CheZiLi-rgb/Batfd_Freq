@@ -36,13 +36,15 @@ T_LABEL = Union[Tensor, Tuple[Tensor, Tensor, Tensor]]
 
 
 class FakeAVDataset(Dataset):
-    def __init__(self, subset: str, root: str = "/data1/lic/FakeAVCelev_v1.2", frame_padding: int = 512,
+    def __init__(self, subset: str, root: str = "/public/home/lc_211124030061", frame_padding: int = 512,
                  max_duration: int = 40, fps: int = 25,
                  video_transform: Callable[[Tensor], Tensor] = Identity(),
                  audio_transform: Callable[[Tensor], Tensor] = Identity(),
                  metadata: Optional[List[Metadata]] = None,
                  get_meta_attr: Callable[[Metadata, Tensor, Tensor, T_LABEL], List[Any]] = None,
-                 return_file_name: bool = False
+                 require_match_scores: bool = False,
+                 return_file_name: bool = False,
+                 metadata_name: str = "metadata_min.json"
                  ):
         self.subset = subset
         self.root = root
@@ -52,15 +54,17 @@ class FakeAVDataset(Dataset):
         self.video_transform = video_transform
         self.audio_transform = audio_transform
         self.get_meta_attr = get_meta_attr
+        self.require_match_scores = require_match_scores
         self.return_file_name = return_file_name
 
         if metadata is None:
-            metadata: List[Metadata] = read_json(os.path.join(self.root, "metadata_min.json"), lambda x: Metadata(**x))
+            metadata: List[Metadata] = read_json(os.path.join(self.root, metadata_name), lambda x: Metadata(**x))
             self.metadata: List[Metadata] = [each for each in metadata if each.split == subset]
 
         else:
             self.metadata: List[Metadata] = metadata
 
+        print(f"Load {metadata_name} successfully.")
         print(f"Load {len(self.metadata)} data in {subset}.")
 
     def __getitem__(self, index: int) -> List[Tensor]:
@@ -68,7 +72,7 @@ class FakeAVDataset(Dataset):
             meta = self.metadata[index]
 
             video, audio, _ = read_video(meta.file)
-
+            
             video = padding_video(video, target=self.video_padding)
             audio = padding_audio(audio, target=self.audio_padding)
 
@@ -107,11 +111,6 @@ class FakeAVDataset(Dataset):
         label_tensor = torch.tensor([float(label)], dtype=torch.float32)
         return label_tensor
 
-    def gen_label(self) -> None:
-        # manually pre-generate label as npy
-        for meta in self.metadata:
-            self.get_label(meta)
-
     def __len__(self) -> int:
         return len(self.metadata)
 
@@ -138,7 +137,8 @@ class FakeAVDataModule(LightningDataModule):
                  take_train: int = None, take_dev: int = None, take_test: int = None,
                  cond: Optional[Callable[[Metadata], bool]] = None,
                  get_meta_attr: Callable[[Metadata, Tensor, Tensor, Tensor], List[Any]] = _default_get_meta_attr,
-                 return_file_name: bool = False
+                 return_file_name: bool = False,
+                 metadata_name: str = "metadata_min.json"
                  ):
         super().__init__()
         self.root = root
@@ -153,10 +153,10 @@ class FakeAVDataModule(LightningDataModule):
         self.get_meta_attr = get_meta_attr
         self.return_file_name = return_file_name
         self.Dataset = feature_type_to_dataset_type[feature_types]
+        self.metadata_name = metadata_name
 
     def setup(self, stage: Optional[str] = None) -> None:
-        # change json
-        self.metadata: List[Metadata] = read_json(os.path.join(self.root, "metadata_split_RVFA_as_test.json"), lambda x: Metadata(**x))
+        self.metadata: List[Metadata] = read_json(os.path.join(self.root, self.metadata_name), lambda x: Metadata(**x))
 
         train_metadata = []
         dev_metadata = []
@@ -176,15 +176,15 @@ class FakeAVDataModule(LightningDataModule):
 
         self.train_dataset = self.Dataset("train", self.root, self.frame_padding, self.max_duration,
                                           metadata=train_metadata, get_meta_attr=self.get_meta_attr,
-                                          return_file_name=self.return_file_name
+                                          return_file_name=self.return_file_name, metadata_name=self.metadata_name
                                           )
         self.dev_dataset = self.Dataset("dev", self.root, self.frame_padding, self.max_duration,
                                         metadata=dev_metadata, get_meta_attr=self.get_meta_attr,
-                                        return_file_name=self.return_file_name
+                                        return_file_name=self.return_file_name, metadata_name=self.metadata_name
                                         )
         self.test_dataset = self.Dataset("test", self.root, self.frame_padding, self.max_duration,
                                          metadata=test_metadata, get_meta_attr=self.get_meta_attr,
-                                         return_file_name=self.return_file_name
+                                         return_file_name=self.return_file_name, metadata_name=self.metadata_name
                                          )
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:

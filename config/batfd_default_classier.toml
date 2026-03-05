@@ -1,4 +1,4 @@
-name = "batfd_default"
+name = "voxceleb_FVFA-FS_as_test"
 num_frames = 512  # T
 max_duration = 40  # D
 model_type = "batfd"

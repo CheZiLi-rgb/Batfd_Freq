@@ -21,6 +21,7 @@ parser.add_argument("--num_train", type=int, default=None)
 parser.add_argument("--num_val", type=int, default=50)
 parser.add_argument("--max_epochs", type=int, default=25)
 parser.add_argument("--resume", type=str, default=None)
+parser.add_argument("--load_metadata", type=str, required=True)
 
 
 if __name__ == '__main__':
@@ -61,6 +62,7 @@ if __name__ == '__main__':
             max_duration=config["max_duration"],
             batch_size=args.batch_size, num_workers=args.num_workers,
             take_train=args.num_train, take_dev=args.num_val,
+            metadata_name=args.load_metadata
         )
     else:
         raise ValueError("Invalid dataset type")
